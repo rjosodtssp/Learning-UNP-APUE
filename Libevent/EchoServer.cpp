@@ -34,7 +34,7 @@ int main()
     addr.sin_addr.s_addr = inet_addr("192.168.0.106");
     addr.sin_family = AF_INET;
     addr.sin_port = htons(PORT);
-
+    //默认非阻塞
     listener = evconnlistener_new_bind(base,accept_conn_cb,NULL,
             LEV_OPT_REUSEABLE,-1,(struct sockaddr*)&addr,sizeof(addr));
     if(!listener)
@@ -42,7 +42,6 @@ int main()
         fprintf(stderr,"new listener error\n");
         exit(1);
     }
-//    evconnlistener_set_cb();
     event_base_dispatch(base);
     return 0;
 }
@@ -63,6 +62,7 @@ void accept_conn_cb(struct evconnlistener* listener, evutil_socket_t fd,
 //    printf("fd:%d  client addr:%s  port:%d\n",fd,inet_ntoa(sin.sin_addr));
 
     struct bufferevent* bev = bufferevent_socket_new(base,fd,BEV_OPT_CLOSE_ON_FREE);
+//    其实对于服务端程序，只需要readcb就可以了
     bufferevent_setcb(bev, read_cb, write_cb, err_cb, NULL);
     bufferevent_enable(bev, EV_READ | EV_WRITE);
 }
@@ -78,9 +78,9 @@ void read_cb(struct bufferevent* bev,void *arg)
     char Rev[MAX_LINE+1], Send[MAX_LINE+1];
     int n;
     evutil_socket_t cfd = bufferevent_getfd(bev);
+#if 1
     if ( (n = bufferevent_read(bev, Rev, MAX_LINE)) > 0)
     {
-//        printf("read size:%d\n",n);
         Rev[n] = '\0';
         printf("cfd=%u, read read from client: %s\n", cfd, Rev);
 
@@ -89,8 +89,13 @@ void read_cb(struct bufferevent* bev,void *arg)
             Send[i] = toupper(Rev[i]);
         }
         Send[n] = '\0';
+//        readcb里面从input中读取数据，处理完毕后填充到output中；
         bufferevent_write(bev, Send, n);
     }
+#endif
+    //另一种获得输入的方法
+//    char* line = evbuffer_readln(buf,&size,EVBUFFER_EOL_ANY);
+//    printf("rev from client:%s\n",line);
 }
 
 void write_cb(struct bufferevent* bev, void *arg)
