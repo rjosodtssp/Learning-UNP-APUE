@@ -12,15 +12,14 @@ void* produce(void* arg)
     int i=0;
     while(1)
     {
-        sem_wait(&blank);
-        queue[i] = rand()%50+50;
+        sem_wait(&blank);   //空闲数--，为0则阻塞等待
+        queue[i] = rand()%50+50;    //生产一个产品
         printf("produce number:%d\n",queue[i]);
-        sem_post(&product);
-        i = (i+1)%NUM;
-//        printf("after post:produce number:%d\n",queue[i]);    //0
+        sem_post(&product);   //产品数++
+        i = (i+1)%NUM;       //环形队列
+//        printf("after post:produce number:%d\n",queue[i]);  //是0，已经被消费
         sleep(rand()%3);
     }
-
 }
 
 void* consume(void* arg)
@@ -28,10 +27,10 @@ void* consume(void* arg)
     int i=0;
     while(1)
     {
-        sem_wait(&product);
+        sem_wait(&product);     //产品数--
         printf("    consume number:%d\n",queue[i]);
-        queue[i] = 0;
-        sem_post(&blank);
+        queue[i] = 0;          //消费一个产品
+        sem_post(&blank);     //空闲数++
         i = (i+1)%NUM;
         sleep(rand()%3);
     }
